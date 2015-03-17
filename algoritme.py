@@ -1,41 +1,80 @@
 #!/usr/bin/python
 from sys import argv
+from sys import exit
 '''
 Un parell de anotacions:
 	dic_count ens serveir per veure quans cops ens surt un mateix valor
-	clauses on tenim les clausules de moment esta en llista pero es pot canviar a diccionari
 '''
-
+clauses = {}
+#TODO: Provar execucio amb tautologia
+#TODO: Pensar si nomes utilitzar el maxim
 #Aqui pintem les variables que surtem mes i menys
-def buildFirstInterpretation(dic_count, interpretation):
+def buildFirstInterpretation(dic_count, interpretation, tmp_inter):
+	if len(dic_count) == 0:
+		#TODO: Arreglar el print de sortida
+		print "SATISTACTIBLE - "
+		exit()
 	for value in dic_count[1]:
+		#TODO: provar si es mes rapid true o 0
 		valor = int(value)
-		interpretation[abs(valor)] = True if valor <=0 else False
-	for value in dic_count[len(dic_count)]:
-		print value
-	print interpretation
+		if interpretation[abs(valor)-1] == 5:
+			interpretation[abs(valor)-1] = False if valor <=0 else True
+			tmp_inter[abs(valor)-1] = interpretation[abs(valor)-1]		
+			try:
+				del clauses[dic_count[1][value]]
+			except KeyError:
+				pass
+	for i in xrange(len(tmp_inter)):
+		if tmp_inter[i] == 5:
+			last_key = dic_count.keys()[-1]
+			i_str = str(i)
+			no_i_str = str(i*-1)
+			if i_str in dic_count[last_key]:
+				print "if 1"
+				tmp_inter[i] = True
+			elif no_i_str in dic_count[last_key]:
+				print "if 2"
+				tmp_inter[i] = False 
+			else:
+				print "if 3"
+				tmp_inter[i] = True
 '''
 Per llegir les dades del fitxer
 '''
 def readFile(fname):
 	dic = {}
 	dic_count = {}
-	clauses = []
+	i = 0
 	for line in open(fname, 'r'):
 		sp = line.split()
 		if sp[0] == 'p':
 			n_vars = sp[2]
 			n_lines = sp[3]
 		elif sp[0] != 'c':
-			clauses.append(sp[:-1])
+			tmp_dic = {}
+			clauses[i] = sp[:-1]
 			for var in sp[:-1]:
-				dic[var] = dic[var]+1 if var in dic else 1
-				if dic[var] in dic_count:
-					dic_count[dic[var]].update({var: 'X'})
-				if dic[var]-1 in dic_count:
-					del dic_count[dic[var]-1][var] 
-				if not dic[var] in dic_count:
-					dic_count[dic[var]] = {var: 'X'}
+				value = int(var)
+				if value * -1 in tmp_dic:
+					del clauses[i]
+					break
+				tmp_dic[value] = 'X'
+			del tmp_dic
+			if i != len(clauses):
+				for var in sp[:-1]:
+					dic[var] = dic[var]+1 if var in dic else 1
+					if dic[var] in dic_count:
+						dic_count[dic[var]].update({var: 'X'})
+					if dic[var]-1 in dic_count:
+						del dic_count[dic[var]-1][var] 
+					if not dic[var] in dic_count:
+						dic_count[dic[var]] = {var: 'X'}
+					if dic[var] == 1:
+						dic_count[1][var] = i
+			else:
+				i -= 1
+
+			i += 1
 	print "clauses: ", clauses
 	print "dic: ", dic
 	print "dic_count: " ,dic_count
@@ -43,5 +82,10 @@ def readFile(fname):
 
 if __name__ == "__main__":
 	n_vars, dic_count = readFile(argv[1])
-	interpretation = {}
-	buildFirstInterpretation(dic_count, interpretation)
+	interpretation = [5]*n_vars
+	tmp_inter = interpretation[:]
+	buildFirstInterpretation(dic_count, interpretation, tmp_inter)
+	print "////clauses: ", clauses
+	print "////dic_count: " ,dic_count
+	print interpretation
+	print tmp_inter
