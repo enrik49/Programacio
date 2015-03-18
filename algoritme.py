@@ -6,6 +6,7 @@ Un parell de anotacions:
 	dic_count ens serveir per veure quans cops ens surt un mateix valor
 '''
 clauses = {}
+clauses_all = {}
 #TODO: Provar execucio amb tautologia
 #TODO: Pensar si nomes utilitzar el maxim
 #Aqui pintem les variables que surtem mes i menys
@@ -30,13 +31,10 @@ def buildFirstInterpretation(dic_count, interpretation, tmp_inter):
 			i_str = str(i)
 			no_i_str = str(i*-1)
 			if i_str in dic_count[last_key]:
-				print "if 1"
 				tmp_inter[i] = True
 			elif no_i_str in dic_count[last_key]:
-				print "if 2"
 				tmp_inter[i] = False 
 			else:
-				print "if 3"
 				tmp_inter[i] = True
 '''
 Per llegir les dades del fitxer
@@ -53,6 +51,7 @@ def readFile(fname):
 		elif sp[0] != 'c':
 			tmp_dic = {}
 			clauses[i] = sp[:-1]
+			clauses_all[i] = sp[:-1]
 			for var in sp[:-1]:
 				value = int(var)
 				if value * -1 in tmp_dic:
@@ -75,17 +74,39 @@ def readFile(fname):
 				i -= 1
 
 			i += 1
-	print "clauses: ", clauses
+	'''print "clauses: ", clauses
 	print "dic: ", dic
-	print "dic_count: " ,dic_count
+	print "dic_count: " ,dic_count'''
 	return int(n_vars), dic_count
+
+def work(interpretation):
+	i = 0
+	while i < 1000:
+		i += 1
+
+def test_interpretation_finish(interpretation, tmp_inter):
+	i = 0
+	for clause in clauses_all:
+		for literal in clauses_all[clause]:
+			lit = int(literal)
+			if (interpretation[abs(lit)-1] == (int(lit)>0)) or (tmp_inter[abs(lit)-1] == (int(lit)>0)): 
+				break
+			i += 1
+		if i == len(clauses_all[clause]):
+			return False
+		i = 0
+	return True
 
 if __name__ == "__main__":
 	n_vars, dic_count = readFile(argv[1])
 	interpretation = [5]*n_vars
 	tmp_inter = interpretation[:]
 	buildFirstInterpretation(dic_count, interpretation, tmp_inter)
-	print "////clauses: ", clauses
+	print tmp_inter
+	work(tmp_inter)
+	#print test_interpretation_finish(interpretation, tmp_inter)
+	'''print "////clauses: ", clauses
+	print "////clauses_all: ", clauses_all
 	print "////dic_count: " ,dic_count
 	print interpretation
-	print tmp_inter
+	print tmp_inter'''
