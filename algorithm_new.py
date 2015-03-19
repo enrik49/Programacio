@@ -67,6 +67,9 @@ def algorithm():
 				break
 	pass
 
+'''
+Es te que mirar si canviem una variable mirar a totes les clausules on esta i quantes en insatisfa
+'''
 def change_better_value(interpretation, n_broke, clauses_unsat):
 	global n_vars
 	best_inte = interpretation.copy()
