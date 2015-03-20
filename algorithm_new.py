@@ -3,10 +3,11 @@ from sys import argv
 import random
 
 clauses = {}
+literals_in_clauses = {}
 n_vars = 0
 n_lines = 0
-max_tries = 1
-max_flips = 1
+max_tries = 10
+max_flips = 10
 
 def read_file(fname):
 	global n_vars
@@ -19,9 +20,21 @@ def read_file(fname):
 			n_lines = int(sp[3])
 		elif sp[0] != 'c':
 			clauses[i] = sp[:-1]
+			for lit in clauses[i]:
+				try:
+					literals_in_clauses[str(int(lit)*-1)][i]
+					del clauses[i]
+					del literals_in_clauses[str(int(lit)*-1)][i]					
+					break
+				except KeyError:
+					if lit in literals_in_clauses:
+						literals_in_clauses[lit].update({i : 'X'})
+					else:
+						literals_in_clauses[lit] = {i: 'X'}
+
 			i += 1
 
-def function_aux(key, broke , clauses_unsat , interpretation):
+def function_aux(key, broke, interpretation):
 	i = 0
 	for literal in clauses[key]:
 		lit = int(literal)
@@ -29,18 +42,15 @@ def function_aux(key, broke , clauses_unsat , interpretation):
 			break
 		i += 1
 	if i == len(clauses[key]):
-		clauses_unsat.append(key)
-		broke += 1
-	i = 0
-	return broke
+		return 1
+	return 0
 
 def interpretation_correct(interpretation):
 	i = 0
 	broke = 0
-	clauses_unsat = []
 	for clause in clauses:
-		broke = function_aux(clause, broke, clauses_unsat, interpretation)
-	return broke, clauses_unsat
+		broke += function_aux(clause, broke, interpretation)
+	return broke
 
 def build_random_interpretation():
 	interpretation = {}
@@ -50,27 +60,25 @@ def build_random_interpretation():
 
 def show_result(interpretation):
 	print "Hem trobat una solucio", interpretation
-	pass
 
-#gsat
+#wsat
 def algorithm():
 	global max_tries, max_flips
-	for i in range(max_tries):
+	for _ in xrange(max_tries):
 		inte = build_random_interpretation()
-		for j in range(max_flips):
-			n_broke, clauses_unsat = interpretation_correct(inte)
+		for _ in xrange(max_flips):
+			n_broke = interpretation_correct(inte)
 			if n_broke == 0:
 				show_result(inte)
 				exit()
-			inte , go_in= change_better_value(inte, n_broke, clauses_unsat)
+			inte , go_in= change_better_value(inte, n_broke)
 			if go_in != True:
 				break
-	pass
 
 '''
 Es te que mirar si canviem una variable mirar a totes les clausules on esta i quantes en insatisfa
 '''
-def change_better_value(interpretation, n_broke, clauses_unsat):
+def change_better_value(interpretation, n_broke):
 	global n_vars
 	best_inte = interpretation.copy()
 	best_broke = 0
@@ -79,10 +87,10 @@ def change_better_value(interpretation, n_broke, clauses_unsat):
 	go_in = False
 	for i in range(n_vars):
 		interpretation[i+1] = (interpretation[i+1] + 1) % 2
-		for j in range(actual_broke):
-			print clauses_unsat
-			print j, clauses_unsat[j], n_broke, interpretation
-			n_broke = function_aux(clauses_unsat[j], n_broke, [], interpretation)
+		for j in literals_in_clauses[i+1]:
+			#print clauses_unsat
+			#print j, clauses_unsat[j], n_broke, interpretation
+			n_broke = function_aux(j, n_broke, interpretation)
 		if actual_broke > n_broke:
 			best_inte = interpretation.best_inte
 			best_broke = n_broke
@@ -92,4 +100,6 @@ def change_better_value(interpretation, n_broke, clauses_unsat):
 
 if __name__ == "__main__":
 	read_file(argv[1])
+	print "cla", clauses
+	print "lit", literals_in_clauses
 	algorithm()
