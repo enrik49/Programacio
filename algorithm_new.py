@@ -6,7 +6,7 @@ clauses = {}
 literals_in_clauses = {}
 n_vars = 0
 n_lines = 0
-max_tries = 50
+max_tries = 1000
 max_flips = 50
 
 def read_file(fname):
@@ -64,15 +64,19 @@ def show_result(interpretation):
 #wsat
 def algorithm():
 	global max_tries, max_flips
-	for _ in xrange(max_tries):
+	for i in xrange(max_tries):
+        	print i
 		inte = build_random_interpretation()
 		for _ in xrange(max_flips):
 			n_broke = interpretation_correct(inte)
+			#print inte
+			print n_broke
 			if n_broke == 0:
 				show_result(inte)
 				exit()
-			inte , go_in= change_better_value(inte, n_broke)
+			inte, go_in= change_better_value(inte, n_broke)
 			if not go_in:
+				print "break"
 				break
 
 def change_better_value(interpretation, actual_broke):
