@@ -6,8 +6,8 @@ clauses = {}
 literals_in_clauses = {}
 n_vars = 0
 n_lines = 0
-max_tries = 10
-max_flips = 10
+max_tries = 50
+max_flips = 50
 
 def read_file(fname):
 	global n_vars
@@ -34,7 +34,7 @@ def read_file(fname):
 
 			i += 1
 
-def function_aux(key, broke, interpretation):
+def function_aux(key, interpretation):
 	i = 0
 	for literal in clauses[key]:
 		lit = int(literal)
@@ -49,7 +49,7 @@ def interpretation_correct(interpretation):
 	i = 0
 	broke = 0
 	for clause in clauses:
-		broke += function_aux(clause, broke, interpretation)
+		broke += function_aux(clause, interpretation)
 	return broke
 
 def build_random_interpretation():
@@ -72,34 +72,40 @@ def algorithm():
 				show_result(inte)
 				exit()
 			inte , go_in= change_better_value(inte, n_broke)
-			if go_in != True:
+			if not go_in:
 				break
 
-'''
-Es te que mirar si canviem una variable mirar a totes les clausules on esta i quantes en insatisfa
-'''
-def change_better_value(interpretation, n_broke):
+def change_better_value(interpretation, actual_broke):
 	global n_vars
 	best_inte = interpretation.copy()
 	best_broke = 0
-	actual_broke = n_broke
+	n_broke = 0
 	tmp_int = interpretation.copy()
 	go_in = False
 	for i in range(n_vars):
 		interpretation[i+1] = (interpretation[i+1] + 1) % 2
-		for j in literals_in_clauses[i+1]:
-			#print clauses_unsat
-			#print j, clauses_unsat[j], n_broke, interpretation
-			n_broke = function_aux(j, n_broke, interpretation)
+		try:
+			for j in literals_in_clauses[str(i+1)]:
+				#print "lite", literals_in_clauses[str(value)]
+				#print "j", j, "n_broke", n_broke, "inter", interpretation
+				#print function_aux(j, interpretation)
+				n_broke += function_aux(j, interpretation)
+				#print n_broke, j
+			for j in literals_in_clauses[str((i+1)*-1)]:
+				n_broke += function_aux(j, interpretation)
+		except KeyError:
+			pass
 		if actual_broke > n_broke:
-			best_inte = interpretation.best_inte
+			actual_broke = n_broke
+			best_inte = interpretation.copy()
 			best_broke = n_broke
 			go_in = True
-		interpretation = tmp_int.copy()
+		interpretation[i+1] = (interpretation[i+1] + 1) % 2
+		n_broke = 0
 	return best_inte, go_in
 
 if __name__ == "__main__":
 	read_file(argv[1])
-	print "cla", clauses
-	print "lit", literals_in_clauses
+	#print "cla", clauses
+	#print "lit", literals_in_clauses
 	algorithm()
