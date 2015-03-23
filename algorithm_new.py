@@ -7,7 +7,7 @@ literals_in_clauses = {}
 n_vars = 0
 n_lines = 0
 max_tries = 1000
-max_flips = 50
+max_flips = 1000
 
 def read_file(fname):
 	global n_vars
@@ -55,61 +55,49 @@ def interpretation_correct(interpretation):
 def build_random_interpretation():
 	interpretation = {}
 	for i in range(n_vars):
-		interpretation[i+1] =  random.randint(0, 1)
+		interpretation[i+1] =  bool(random.getrandbits(1))
 	return interpretation
 
 def show_result(interpretation):
 	print "Hem trobat una solucio", interpretation
 
-#wsat
+#gsat
 def algorithm():
-	global max_tries, max_flips
-	for i in xrange(max_tries):
-        	print i
-		inte = build_random_interpretation()
-		for _ in xrange(max_flips):
-			n_broke = interpretation_correct(inte)
-			#print inte
-			print n_broke
-			if n_broke == 0:
-				show_result(inte)
-				exit()
-			inte, go_in= change_better_value(inte, n_broke)
-			if not go_in:
-				print "break"
-				break
+    n_broke = 0
+    inside = True
+    for _ in xrange(max_tries):
+        inter = build_random_interpretation()
+        for x in xrange(max_flips):
 
-def change_better_value(interpretation, actual_broke):
-	global n_vars
-	best_inte = interpretation.copy()
-	best_broke = 0
-	n_broke = 0
-	tmp_int = interpretation.copy()
-	go_in = False
-	for i in range(n_vars):
-		interpretation[i+1] = (interpretation[i+1] + 1) % 2
-		try:
-			for j in literals_in_clauses[str(i+1)]:
-				#print "lite", literals_in_clauses[str(value)]
-				#print "j", j, "n_broke", n_broke, "inter", interpretation
-				#print function_aux(j, interpretation)
-				n_broke += function_aux(j, interpretation)
-				#print n_broke, j
-			for j in literals_in_clauses[str((i+1)*-1)]:
-				n_broke += function_aux(j, interpretation)
-		except KeyError:
-			pass
-		if actual_broke > n_broke:
-			actual_broke = n_broke
-			best_inte = interpretation.copy()
-			best_broke = n_broke
-			go_in = True
-		interpretation[i+1] = (interpretation[i+1] + 1) % 2
-		n_broke = 0
-	return best_inte, go_in
+            print x
+            n_broke = interpretation_correct(inter)
+            if n_broke == 0:
+                show_result(inter)
+                return inter
+            inter, inside = better_interpretation(inter, n_broke)
+            if not inside:
+                break
+            n_broke = 0
+
+
+def better_interpretation(inter, n_broke):
+    global n_vars
+    inside = False
+    set = []
+    for i in range(n_vars):
+        inter[i+1] = False if inter[i+1] else True
+        if n_broke > interpretation_correct(inter):
+            set.append(i+1)
+            inside = True
+        inter[i+1] = False if inter[i+1] else True
+    if inside:
+        var = set[random.randint(0,len(set)-1)]
+        inter[var] = False if inter[var] else True
+    return inter, inside
+	#print interpretation
+	#intepretation = {1: 0, 2: 1, 3: 0, 4: 0, 5: 0, 6: 1, 7: 1, 8: 0, 9: 1, 10: 1, 11: 0, 12: 1, 13: 1, 14: 1, 15: 0, 16: 1, 17: 0, 18: 0, 19: 0, 20: 0, 21: 0, 22: 0, 23: 0, 24: 1, 25: 1, 26: 0, 27: 1, 28: 0, 29: 0, 30: 0}
+
 
 if __name__ == "__main__":
 	read_file(argv[1])
-	#print "cla", clauses
-	#print "lit", literals_in_clauses
 	algorithm()
