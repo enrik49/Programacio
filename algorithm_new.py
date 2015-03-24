@@ -1,55 +1,56 @@
 #!/usr/bin/python
 from sys import argv
+import time
 import random
 
 clauses = {}
 literals_in_clauses = {}
 n_vars = 0
-n_lines = 0
+wprob = 0.80
 max_tries = 1000
-max_flips = 1000
+max_flips = 100*425
 
 def read_file(fname):
 	global n_vars
-	global n_lines
-	i = 0
 	for line in open(fname, 'r'):
 		sp = line.split()
 		if sp[0] == 'p':
 			n_vars = int(sp[2])
-			n_lines = int(sp[3])
 		elif sp[0] != 'c':
-			clauses[i] = sp[:-1]
-			for lit in clauses[i]:
+			key = tuple(sorted(sp[:-1]))
+			clauses[key] =  False
+			for lit in sp[:-1]:
 				try:
-					literals_in_clauses[str(int(lit)*-1)][i]
-					del clauses[i]
-					del literals_in_clauses[str(int(lit)*-1)][i]					
+					literals_in_clauses[str(int(lit)*-1)][key]
+					del clauses[key]
+					for litt in sp[:-1]:
+						del literals_in_clauses[litt][key]
 					break
 				except KeyError:
-					if lit in literals_in_clauses:
-						literals_in_clauses[lit].update({i : 'X'})
-					else:
-						literals_in_clauses[lit] = {i: 'X'}
+					try:
+						literals_in_clauses[lit]['c'].update({key : True})
+					except KeyError:
+						literals_in_clauses[lit] = { 'c': {key: True} , 'n':0}
 
-			i += 1
-
-def function_aux(key, interpretation):
-	i = 0
-	for literal in clauses[key]:
+def function_aux(key, interpretation, mode = False):
+	for literal in key:
+		if mode:
+			literals_in_clauses[literal]['n'] = 0
 		lit = int(literal)
 		if (interpretation[abs(lit)] == (int(lit)>0)) : 
-			break
-		i += 1
-	if i == len(clauses[key]):
-		return 1
-	return 0
+			clauses[key] = True
+			return 0
+	if mode :
+		for literal in key:
+			literals_in_clauses[literal]['n'] += 1
+	clauses[key] = False
+	return 1
 
-def interpretation_correct(interpretation):
+def interpretation_correct(interpretation, mode =  False):
 	i = 0
 	broke = 0
 	for clause in clauses:
-		broke += function_aux(clause, interpretation)
+		broke += function_aux(clause, interpretation, mode)
 	return broke
 
 def build_random_interpretation():
@@ -59,43 +60,56 @@ def build_random_interpretation():
 	return interpretation
 
 def show_result(interpretation):
-	print "Hem trobat una solucio", interpretation
+	print "c Nom solver"
+	print "s SATISFIABLE"
+	result = ""
+	for item in interpretation:
+		result += str(item) if interpretation[item] else str(item*-1)
+		result += " "
+	print "v " + result + "0"
 
 #gsat
 def algorithm():
-    n_broke = 0
-    inside = True
-    for _ in xrange(max_tries):
-        inter = build_random_interpretation()
-        for x in xrange(max_flips):
-
-            print x
-            n_broke = interpretation_correct(inter)
-            if n_broke == 0:
-                show_result(inter)
-                return inter
-            inter, inside = better_interpretation(inter, n_broke)
-            if not inside:
-                break
-            n_broke = 0
+	n_broke = 0
+	inside = True
+	while 1 :
+		inter = build_random_interpretation()
+		for _ in xrange(max_flips):
+			n_broke = interpretation_correct(inter, True)
+			if n_broke == 0:
+				show_result(inter)
+				return inter
+			inter, inside = better_interpretation(inter, n_broke)
+			if not inside:
+				break
+			n_broke = 0
 
 
 def better_interpretation(inter, n_broke):
-    global n_vars
-    inside = False
-    set = []
-    for i in range(n_vars):
-        inter[i+1] = False if inter[i+1] else True
-        if n_broke > interpretation_correct(inter):
-            set.append(i+1)
-            inside = True
-        inter[i+1] = False if inter[i+1] else True
-    if inside:
-        var = set[random.randint(0,len(set)-1)]
-        inter[var] = False if inter[var] else True
-    return inter, inside
-	#print interpretation
-	#intepretation = {1: 0, 2: 1, 3: 0, 4: 0, 5: 0, 6: 1, 7: 1, 8: 0, 9: 1, 10: 1, 11: 0, 12: 1, 13: 1, 14: 1, 15: 0, 16: 1, 17: 0, 18: 0, 19: 0, 20: 0, 21: 0, 22: 0, 23: 0, 24: 1, 25: 1, 26: 0, 27: 1, 28: 0, 29: 0, 30: 0}
+	global n_vars, wprob
+	inside = False
+	best_inte = 0
+	first = True
+	n_broke = n_vars
+	for i in range(n_vars):
+		inter[i+1] = False if inter[i+1] else True
+		actual_broke = 0
+		try:
+			for key in literals_in_clauses[str((i+1)*-1)]['c']:
+				actual_broke += function_aux(key, inter)
+		except KeyError:
+			pass
+		if actual_broke < n_broke:
+			n_broke = actual_broke
+			best_inte = i + 1
+		inter[i+1] = False if inter[i+1] else True
+	prob = random.random()
+	if prob < wprob:
+		index = random.randint(1,n_vars)
+		inter[best_inte] = False if inter[best_inte] else True
+	else:
+		inter[best_inte] = False if inter[best_inte] else True
+	return inter, inside
 
 
 if __name__ == "__main__":
