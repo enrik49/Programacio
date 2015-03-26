@@ -6,9 +6,12 @@ import random
 clauses = {}
 literals_in_clauses = {}
 n_vars = 0
-wprob = 0.80
+wprob = 0.35
 max_tries = 1000
-max_flips = 100*425
+max_flips = 0
+taboo = {}
+
+#Mirar prova.cnf
 
 def read_file(fname):
 	global n_vars
@@ -60,7 +63,7 @@ def build_random_interpretation():
 	return interpretation
 
 def show_result(interpretation):
-	print "c Nom solver"
+	print "c Law y orden"
 	print "s SATISFIABLE"
 	result = ""
 	for item in interpretation:
@@ -74,11 +77,13 @@ def algorithm():
 	inside = True
 	while 1 :
 		inter = build_random_interpretation()
-		for _ in xrange(max_flips):
+		for _ in xrange(n_vars):
 			n_broke = interpretation_correct(inter, True)
 			if n_broke == 0:
 				show_result(inter)
 				return inter
+			else:
+				taboo[tuple(inter.values())] =  True
 			inter, inside = better_interpretation(inter, n_broke)
 			if not inside:
 				break
@@ -94,14 +99,24 @@ def better_interpretation(inter, n_broke):
 	for i in range(n_vars):
 		inter[i+1] = False if inter[i+1] else True
 		actual_broke = 0
-		try:
+		#print tuple(inter.values())
+		if tuple(inter.values()) not in taboo:
+			try:
+				for key in literals_in_clauses[str((i+1)*-1)]['c']:
+					actual_broke += function_aux(key, inter)
+			except KeyError:
+				pass
+			if actual_broke < n_broke:
+				n_broke = actual_broke
+				best_inte = i + 1
+		'''try:
 			for key in literals_in_clauses[str((i+1)*-1)]['c']:
 				actual_broke += function_aux(key, inter)
 		except KeyError:
 			pass
 		if actual_broke < n_broke:
 			n_broke = actual_broke
-			best_inte = i + 1
+			best_inte = i + 1'''
 		inter[i+1] = False if inter[i+1] else True
 	prob = random.random()
 	if prob < wprob:
