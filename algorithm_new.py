@@ -73,28 +73,29 @@ def show_result(interpretation):
 
 #gsat
 def algorithm():
+	global wprob
 	n_broke = 0
 	inside = True
-	while 1 :
+	while True :
 		inter = build_random_interpretation()
 		for _ in xrange(n_vars):
 			n_broke = interpretation_correct(inter, True)
 			if n_broke == 0:
 				show_result(inter)
 				return inter
+
+			prob = random.random()
+			if prob < wprob:
+				index = random.randint(1,n_vars)
+				inter[index] = False if inter[index] else True
 			else:
-				taboo[tuple(inter.values())] =  True
-			inter, inside = better_interpretation(inter, n_broke)
-			if not inside:
-				break
+				inter = better_interpretation(inter, n_broke)
 			n_broke = 0
 
 
 def better_interpretation(inter, n_broke):
-	global n_vars, wprob
-	inside = False
+	global n_vars
 	best_inte = 0
-	first = True
 	n_broke = n_vars
 	for i in range(n_vars):
 		inter[i+1] = False if inter[i+1] else True
@@ -109,22 +110,8 @@ def better_interpretation(inter, n_broke):
 			if actual_broke < n_broke:
 				n_broke = actual_broke
 				best_inte = i + 1
-		'''try:
-			for key in literals_in_clauses[str((i+1)*-1)]['c']:
-				actual_broke += function_aux(key, inter)
-		except KeyError:
-			pass
-		if actual_broke < n_broke:
-			n_broke = actual_broke
-			best_inte = i + 1'''
 		inter[i+1] = False if inter[i+1] else True
-	prob = random.random()
-	if prob < wprob:
-		index = random.randint(1,n_vars)
-		inter[best_inte] = False if inter[best_inte] else True
-	else:
-		inter[best_inte] = False if inter[best_inte] else True
-	return inter, inside
+	return inter
 
 
 if __name__ == "__main__":
