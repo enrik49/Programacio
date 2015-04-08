@@ -99,7 +99,7 @@ def solve():
 	global n_vars, wprob
 	while True:
 		rinter = build_random_interpretation()
-		for _ in xrange(n_vars*2):
+		for _ in xrange(int(n_vars*1.25)):
 			broke = interpretation_correct(rinter)
 			if broke == 0 : 
 				show_result(rinter)
